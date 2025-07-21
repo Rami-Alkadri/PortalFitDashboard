@@ -4,7 +4,11 @@ import * as path from 'path';
 
 export interface TransferPlayerStats {
   rk: number;
+  pick: string;
   player: string;
+  playerClass: string;
+  height: string;
+  recruitRank: string;
   team: string;
   conf: string;
   g: number;
@@ -16,6 +20,7 @@ export interface TransferPlayerStats {
   obpm: number;
   dbpm: number;
   ortg: number;
+  drtg: number;
   usg: number;
   efg: number;
   ts: number;
@@ -28,14 +33,20 @@ export interface TransferPlayerStats {
   stl: number;
   ftr: number;
   fc40: number;
-  dunks: number;
-  close2: number;
-  far2: number;
-  ft: number;
-  twoP: number;
+  dunks: string;
+  dunksPct: number;
+  close2: string;
+  close2Pct: number;
+  far2: string;
+  far2Pct: number;
+  ft: string;
+  ftPct: number;
+  twoP: string;
+  twoPPct: number;
   threePr: number;
   threeP100: number;
-  threeP: number;
+  threeP: string;
+  threePPct: number;
 }
 
 class TransferPlayersScraper {
@@ -101,97 +112,113 @@ class TransferPlayersScraper {
     
     // Extract player data from table with proper structure
     const players = await this.page.$$eval('tr', rows => {
-      const results = rows.map(row => { // Don't skip any rows initially
-        const cells = row.querySelectorAll('td');
-        if (cells.length < 30) return null; // Need at least 30 columns
-        
-        // Extract player name from the link in the 5th column (index 4)
+      let firstRowCellCount = null;
+      const results = rows.map((row, rowIdx) => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        if (rowIdx === 0) firstRowCellCount = cells.length;
+        if (cells.length < 10) return null;
+        // Skip header rows
         const playerNameCell = cells[4];
         const playerLink = playerNameCell?.querySelector('a');
         const playerName = playerLink?.textContent?.trim() || '';
-        
-        // Extract team name from the 7th column (index 6)
         const teamCell = cells[6];
         const teamLink = teamCell?.querySelector('a');
         const teamName = teamLink?.textContent?.trim() || '';
-        
-        // Extract conference from the 8th column (index 7)
         const confCell = cells[7];
         const confLink = confCell?.querySelector('a');
         const confName = confLink?.textContent?.trim() || '';
-        
-        const cellTexts = Array.from(cells).map(cell => cell.textContent?.trim() || '');
-        
-        // Skip rows that are clearly not player data
-        if (cellTexts[0] === '' || cellTexts[0] === 'Rk' || cellTexts[0] === 'Player' || 
-            cellTexts[0] === 'Team' || cellTexts[0] === 'Conf' || cellTexts[0] === 'G' ||
-            cellTexts[0] === 'Role' || cellTexts[0] === 'Min%' || cellTexts[0] === 'PRPG!' ||
-            cellTexts[0] === 'D-PRPG' || cellTexts[0] === 'BPM' || cellTexts[0] === 'OBPM' ||
-            cellTexts[0] === 'DBPM' || cellTexts[0] === 'ORtg' || cellTexts[0] === 'Usg' ||
-            cellTexts[0] === 'eFG' || cellTexts[0] === 'TS' || cellTexts[0] === 'OR' ||
-            cellTexts[0] === 'DR' || cellTexts[0] === 'Ast' || cellTexts[0] === 'TO' ||
-            cellTexts[0] === 'A/TO' || cellTexts[0] === 'Blk' || cellTexts[0] === 'Stl' ||
-            cellTexts[0] === 'FTR' || cellTexts[0] === 'FC/40' || cellTexts[0] === 'Dunks' ||
-            cellTexts[0] === 'Close 2' || cellTexts[0] === 'Far 2' || cellTexts[0] === 'FT' ||
-            cellTexts[0] === '2P' || cellTexts[0] === '3PR' || cellTexts[0] === '3P/100' ||
-            cellTexts[0] === '3P') {
-          return null;
-        }
-        
-        // Check if this looks like actual player data - must have a valid rank number
-        if (!cellTexts[0] || isNaN(parseInt(cellTexts[0])) || parseInt(cellTexts[0]) <= 0) {
-          return null;
-        }
-        
-        // Must have a player name
-        if (!playerName || playerName.length < 2) {
-          return null;
-        }
+        if (playerName === 'Player' || teamName === 'Team' || confName === 'Conf') return null;
         
         try {
+          let idx = 0;
+          const rankText = cells[idx++]?.textContent?.trim() || '';
+          const rank = parseInt(rankText);
+          const pick = cells[idx++]?.textContent?.trim() || '';
+          const posClassCell = cells[idx++];
+          const divs = posClassCell.querySelectorAll('div');
+          const playerClass = divs[1]?.textContent?.trim() || posClassCell.textContent?.trim() || '';
+          const height = cells[idx++]?.textContent?.trim() || '';
+          const playerNameCell2 = cells[idx++];
+          const playerLink2 = playerNameCell2?.querySelector('a');
+          const playerName2 = playerLink2?.textContent?.trim() || '';
+          const recruitRank = cells[idx++]?.textContent?.trim() || '';
+          const teamCell2 = cells[idx++];
+          const teamLink2 = teamCell2?.querySelector('a');
+          const teamName2 = teamLink2?.textContent?.trim() || '';
+          const confCell2 = cells[idx++];
+          const confLink2 = confCell2?.querySelector('a');
+          const confName2 = confLink2?.textContent?.trim() || '';
           return {
-            rk: parseInt(cellTexts[0]) || 0,
-            player: playerName, // Use extracted player name from link
-            team: teamName, // Use extracted team name from link
-            conf: confName, // Use extracted conference name from link
-            g: parseInt(cellTexts[8]) || 0, // Games column
-            role: cellTexts[9] || '', // Role column
-            minPct: parseFloat(cellTexts[10]) || 0,
-            prpg: parseFloat(cellTexts[11]) || 0,
-            dPrpg: parseFloat(cellTexts[12]) || 0,
-            bpm: parseFloat(cellTexts[13]) || 0,
-            obpm: parseFloat(cellTexts[14]) || 0,
-            dbpm: parseFloat(cellTexts[15]) || 0,
-            ortg: parseFloat(cellTexts[16]) || 0,
-            usg: parseFloat(cellTexts[17]) || 0,
-            efg: parseFloat(cellTexts[18]) || 0,
-            ts: parseFloat(cellTexts[19]) || 0,
-            or: parseFloat(cellTexts[20]) || 0,
-            dr: parseFloat(cellTexts[21]) || 0,
-            ast: parseFloat(cellTexts[22]) || 0,
-            to: parseFloat(cellTexts[23]) || 0,
-            aTo: parseFloat(cellTexts[24]) || 0,
-            blk: parseFloat(cellTexts[25]) || 0,
-            stl: parseFloat(cellTexts[26]) || 0,
-            ftr: parseFloat(cellTexts[27]) || 0,
-            fc40: parseFloat(cellTexts[28]) || 0,
-            dunks: parseFloat(cellTexts[29]) || 0,
-            close2: parseFloat(cellTexts[30]) || 0,
-            far2: parseFloat(cellTexts[31]) || 0,
-            ft: parseFloat(cellTexts[32]) || 0,
-            twoP: parseFloat(cellTexts[33]) || 0,
-            threePr: parseFloat(cellTexts[34]) || 0,
-            threeP100: parseFloat(cellTexts[35]) || 0,
-            threeP: parseFloat(cellTexts[36]) || 0
+            rk: rank,
+            pick: pick,
+            player: playerName2,
+            playerClass: playerClass,
+            height: height,
+            recruitRank: recruitRank,
+            team: teamName2,
+            conf: confName2,
+            g: parseInt(cells[idx++]?.textContent?.trim() || '0') || 0,
+            role: cells[idx++]?.textContent?.trim() || '',
+            minPct: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            prpg: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            dPrpg: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            bpm: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            obpm: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            dbpm: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            ortg: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            drtg: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0, // hidden D-Rtg
+            usg: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            efg: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            ts: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            or: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            dr: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            ast: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            to: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            aTo: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            blk: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            stl: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            ftr: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            fc40: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            // Dunks (2 cells)
+            dunks: cells[idx++]?.textContent?.trim() || '',
+            dunksPct: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            // Close 2 (2 cells)
+            close2: cells[idx++]?.textContent?.trim() || '',
+            close2Pct: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            // Far 2 (2 cells)
+            far2: cells[idx++]?.textContent?.trim() || '',
+            far2Pct: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            // FT (2 cells)
+            ft: cells[idx++]?.textContent?.trim() || '',
+            ftPct: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            // 2P (2 cells)
+            twoP: cells[idx++]?.textContent?.trim() || '',
+            twoPPct: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            // 3PR
+            threePr: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            // 3P/100
+            threeP100: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0,
+            // 3P (2 cells)
+            threeP: cells[idx++]?.textContent?.trim() || '',
+            threePPct: parseFloat(cells[idx++]?.textContent?.trim() || '0') || 0
           };
         } catch (error) {
           return null;
         }
       });
-      
-      return results.filter((item): item is TransferPlayerStats => item !== null);
+      if (firstRowCellCount !== null) {
+        // @ts-ignore
+        window.firstRowCellCount = firstRowCellCount;
+      }
+      return results.filter(Boolean);
     });
-
+    if (players.length > 0) {
+      console.log('Sample player:', players[0]);
+    }
+    // Log the first row cell count for debugging
+    if (typeof window !== 'undefined' && (window as any).firstRowCellCount) {
+      console.log('First row cell count:', (window as any).firstRowCellCount);
+    }
     console.log(`✅ Scraped ${players.length} transfer players for ${year}`);
     return players;
   }
@@ -243,4 +270,4 @@ if (require.main === module) {
   main().catch(console.error);
 }
 
-export { TransferPlayersScraper }; 
+export { TransferPlayersScraper };

@@ -8,20 +8,18 @@ function getFitScoreColor(score: number) {
   return "#EF4444"
 }
 
-const radarData = [
-  { subject: "Defense", A: 90, B: 80, fullMark: 100 },
-  { subject: "Offense", A: 75, B: 85, fullMark: 100 },
-  { subject: "Athletics", A: 85, B: 70, fullMark: 100 },
-  { subject: "Role Fit", A: 88, B: 75, fullMark: 100 },
-  { subject: "Leadership", A: 70, B: 65, fullMark: 100 },
-  { subject: "Clutch", A: 80, B: 70, fullMark: 100 },
-]
-
 interface PlayerAnalysisPanelProps {
   player: any
 }
 
 export function PlayerAnalysisPanel({ player }: PlayerAnalysisPanelProps) {
+  // Generate radar data for the triangle (Quality, Team Need, Style)
+  const fitRadarData = player && player.breakdown ? [
+    { subject: "Talent", Player: player.breakdown.Talent ?? 0, Ideal: 100 },
+    { subject: "Team Need", Player: player.breakdown["Team Need"] ?? 0, Ideal: 100 },
+    { subject: "Style", Player: player.breakdown.Style ?? 0, Ideal: 100 },
+  ] : [];
+
   if (!player) {
     return (
       <div className="h-full flex items-center justify-center text-gray-400" style={{ backgroundColor: "#0A0E27" }}>
@@ -30,7 +28,7 @@ export function PlayerAnalysisPanel({ player }: PlayerAnalysisPanelProps) {
           <p>Select a player to view detailed analysis</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -69,17 +67,17 @@ export function PlayerAnalysisPanel({ player }: PlayerAnalysisPanelProps) {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4">System Fit Analysis</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Illini Fit Analysis</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={radarData}>
+              <RadarChart data={fitRadarData} outerRadius={90}>
                 <PolarGrid stroke="#374151" />
                 <PolarAngleAxis dataKey="subject" tick={{ fill: "#9CA3AF", fontSize: 12 }} />
                 <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: "#9CA3AF", fontSize: 10 }} />
-                <Radar name="Player" dataKey="A" stroke="#FF5F05" fill="#FF5F05" fillOpacity={0.2} strokeWidth={2} />
+                <Radar name="Player" dataKey="Player" stroke="#FF5F05" fill="#FF5F05" fillOpacity={0.2} strokeWidth={2} />
                 <Radar
                   name="Illinois Ideal"
-                  dataKey="B"
+                  dataKey="Ideal"
                   stroke="#13294B"
                   fill="#13294B"
                   fillOpacity={0.1}
@@ -89,88 +87,61 @@ export function PlayerAnalysisPanel({ player }: PlayerAnalysisPanelProps) {
               </RadarChart>
             </ResponsiveContainer>
           </div>
+          {/* Numeric stat display under the triangle */}
+          {player && player.breakdown && (
+            <div className="flex justify-around mt-1">
+              {["Talent", "Team Need", "Style"].map((key) => (
+                <div key={key} className="flex flex-col items-center">
+                  <span
+                    className="text-lg font-bold"
+                    style={{ color: getFitScoreColor(player.breakdown[key] ?? 0) }}
+                  >
+                    {player.breakdown[key] ?? 0}
+                  </span>
+                  <span className="text-xs text-gray-300 mt-1">{key}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4">vs Most Similar Illini</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <h4 className="font-medium text-[#FF5F05]">{player.name}</h4>
-              <div className="space-y-2 text-sm text-gray-300">
+          <h3 className="text-lg font-semibold text-white mb-4">Season Stats</h3>
+          <div className="bg-[#1A1F3A] p-4 rounded-lg border border-gray-700">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span>PPG</span>
+                  <span className="text-gray-300">PPG</span>
                   <span className="text-white font-medium">{player.stats.ppg}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>RPG</span>
+                  <span className="text-gray-300">RPG</span>
                   <span className="text-white font-medium">{player.stats.rpg}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>APG</span>
+                  <span className="text-gray-300">APG</span>
                   <span className="text-white font-medium">{player.stats.apg}</span>
                 </div>
+              </div>
+              <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span>3PT%</span>
+                  <span className="text-gray-300">2PT%</span>
+                  <span className="text-white font-medium">{player.stats.fgPct ? Math.round(player.stats.fgPct * 100) : 0}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-300">3PT%</span>
                   <span className="text-white font-medium">{player.stats.fg3}%</span>
                 </div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <h4 className="font-medium text-[#13294B]">{player.similarTo}</h4>
-              <div className="space-y-2 text-sm text-gray-300">
                 <div className="flex justify-between">
-                  <span>PPG</span>
-                  <span className="text-white font-medium">11.8</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>RPG</span>
-                  <span className="text-white font-medium">4.2</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>APG</span>
-                  <span className="text-white font-medium">4.8</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>3PT%</span>
-                  <span className="text-white font-medium">32%</span>
+                  <span className="text-gray-300">Min%</span>
+                  <span className="text-white font-medium">{player.stats.minPct ? Math.round(player.stats.minPct * 100) : 0}%</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div>
-          <h3 className="text-lg font-semibold text-white mb-4">Projected Role at Illinois</h3>
-          <div className="bg-[#1A1F3A] p-4 rounded-lg border border-gray-700">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-gray-300">Expected Minutes</span>
-              <span className="text-white font-semibold">22-28 MPG</span>
-            </div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-gray-300">Primary Role</span>
-              <span className="text-white font-semibold">6th Man/Starter</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-300">Impact Timeline</span>
-              <span className="text-white font-semibold">Immediate</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3">
-          <Button className="flex-1 bg-[#FF5F05] hover:bg-[#E54A00] text-white">
-            <Star className="h-4 w-4 mr-2" />
-            Add to Watchlist
-          </Button>
-          <Button variant="outline" className="flex-1 border-gray-600 text-white hover:bg-[#1A1F3A] bg-transparent">
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Compare
-          </Button>
-          <Button variant="outline" className="border-gray-600 text-white hover:bg-[#1A1F3A] bg-transparent">
-            <Download className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
     </div>
-  )
+  );
 } 
