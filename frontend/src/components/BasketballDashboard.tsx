@@ -32,6 +32,22 @@ export default function BasketballDashboard() {
   const [sortBy, setSortBy] = useState("fitScore")
   const [showAvailableOnly, setShowAvailableOnly] = useState(false)
 
+  // Role alias mapping for filtering
+  const roleAliases: Record<string, string[]> = {
+    SF: ["Wing F", "Stretch 4"],
+    SG: ["Wing G", "Combo G"],
+    PG: ["Pure PG", "Scoring PG"],
+    PF: ["PF/C"],
+  };
+
+  // Expand selectedRoles to include aliases
+  const expandedSelectedRoles = [
+    ...selectedRoles,
+    ...Object.entries(roleAliases)
+      .filter(([alias, triggers]) => triggers.some(role => selectedRoles.includes(role)))
+      .map(([alias]) => alias)
+  ];
+
   useEffect(() => {
     fetch("/transfer-players-2026-merged.json")
       .then((res) => {
@@ -81,7 +97,7 @@ export default function BasketballDashboard() {
   // Filter players by search term, role, and minimums
   const filteredPlayers = allPlayers.filter(player => {
     const matchesSearch = player.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRoles.length === 0 || selectedRoles.includes(player.position);
+    const matchesRole = expandedSelectedRoles.length === 0 || expandedSelectedRoles.includes(player.position);
     const matchesFitScore = player.fitScore >= minFitScore;
     const matchesTalent = (player.breakdown?.Talent ?? 0) >= minTalent;
     const matchesTeamNeed = (player.breakdown?.["Team Need"] ?? 0) >= minTeamNeed;
