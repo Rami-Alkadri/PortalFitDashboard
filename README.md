@@ -1,0 +1,1 @@
+Please see docs/illini-fit.pdf for full writeup
