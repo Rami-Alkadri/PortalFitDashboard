@@ -71,6 +71,9 @@ export default function BasketballDashboard() {
     },
     photo: p["247_imageUrl"] || "",
     status: p["247_status"] || "",
+    // Pass through fit summary fields
+    fitSummary: p.fitSummary,
+    fitSummaryStruct: p.fitSummaryStruct,
   }))
 
   const allPlayers = [...mappedPlayers]
@@ -163,26 +166,6 @@ export default function BasketballDashboard() {
 
               <div className="flex items-center gap-4">
                 <div className="hidden sm:flex items-center gap-2">
-                  <Button
-                    variant={viewMode === "grid" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("grid")}
-                    className={
-                      viewMode === "grid" ? "bg-[#FF5F05] hover:bg-[#E54A00]" : "text-gray-400 hover:bg-[#1A1F3A]"
-                    }
-                  >
-                    <Grid3X3 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setViewMode("list")}
-                    className={
-                      viewMode === "list" ? "bg-[#FF5F05] hover:bg-[#E54A00]" : "text-gray-400 hover:bg-[#1A1F3A]"
-                    }
-                  >
-                    <List className="h-4 w-4" />
-                  </Button>
                 </div>
 
                 <div className="hidden md:flex items-center gap-2 text-sm text-gray-400">

@@ -3,9 +3,9 @@ import { Users, Star, BarChart3, Download } from "lucide-react"
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts"
 
 function getFitScoreColor(score: number) {
-  if (score >= 80) return "#22C55E"
-  if (score >= 65) return "#F59E0B"
-  return "#EF4444"
+  if (score >= 70) return "#22C55E"; // green
+  if (score > 30) return "#F59E0B"; // orange (centered at 40, range 31-69)
+  return "#EF4444"; // red for 30 and under
 }
 
 interface PlayerAnalysisPanelProps {
@@ -49,23 +49,33 @@ export function PlayerAnalysisPanel({ player }: PlayerAnalysisPanelProps) {
 
       <div className="p-6 space-y-8">
         <div>
-          <h3 className="text-lg font-semibold text-white mb-4">Why this score?</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">AI Summary</h3>
           <div className="space-y-3 text-gray-300">
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-[#22C55E] rounded-full mt-2 flex-shrink-0" />
-              <p>Elite defensive instincts and versatility match Illinois system perfectly</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-[#F59E0B] rounded-full mt-2 flex-shrink-0" />
-              <p>Solid offensive production but needs improvement in half-court sets</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-2 h-2 bg-[#22C55E] rounded-full mt-2 flex-shrink-0" />
-              <p>Physical tools and athleticism ideal for Big Ten competition</p>
-            </div>
+            {(player.fitSummaryStruct && Array.isArray(player.fitSummaryStruct) && player.fitSummaryStruct.length > 0
+              ? player.fitSummaryStruct.slice(0, 3)
+              : player.fitSummary
+                ? player.fitSummary.split(/\n|\r/).filter(Boolean).slice(0, 3).map((line: string) => ({ text: line, sentiment: "neutral" }))
+                : [
+                    { text: "No summary available.", sentiment: "neutral" },
+                  ]
+            ).map((b: any, idx: number) => {
+              let dotColor = "bg-gray-400";
+              if (b.sentiment === "positive") dotColor = "bg-[#22C55E]";
+              else if (b.sentiment === "negative") dotColor = "bg-[#EF4444]";
+              else if (b.sentiment === "neutral") dotColor = "bg-gray-400";
+              else if (b.sentiment === "warning" || b.sentiment === "orange") dotColor = "bg-[#F59E0B]";
+              // Strip leading dash and space
+              const cleanText = b.text.replace(/^\s*-\s*/, "");
+              return (
+                <div className="flex items-start gap-3" key={b.text + idx}>
+                  <div className={`w-2 h-2 ${dotColor} rounded-full mt-2 flex-shrink-0`} />
+                  <p>{cleanText}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
-
+        
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">Illini Fit Analysis</h3>
           <div className="h-64">

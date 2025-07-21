@@ -2,9 +2,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 function getFitScoreColor(score: number) {
-  if (score >= 80) return "#22C55E"
-  if (score >= 65) return "#F59E0B"
-  return "#EF4444"
+  if (score >= 70) return "#22C55E"; // green
+  if (score >= 55) return "#FFED0B";
+  if (score > 35) return "#F59E0B"; // orange
+  return "#EF4444"; 
 }
 
 interface PlayerCardProps {

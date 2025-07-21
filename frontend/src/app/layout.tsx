@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import '../globals.css'
 
 export const metadata: Metadata = {
-  title: 'Basketball Dashboard',
-  description: 'Portal Fit Predictor - Basketball Transfer Analytics',
+  title: 'Illini Fit',
+  description: 'Portal Fit Predictor',
 }
 
 export default function RootLayout({
